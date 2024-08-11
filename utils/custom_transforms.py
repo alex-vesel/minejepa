@@ -1,6 +1,7 @@
 from abc import ABC
 import numpy as np
 import cv2
+import torch
 
 
 class BaseTransform(ABC):
@@ -9,6 +10,14 @@ class BaseTransform(ABC):
 
     def __call__(self, x):
         return x
+    
+
+class FloatTransform(BaseTransform):
+    def __init__(self):
+        super(FloatTransform, self).__init__()
+
+    def __call__(self, x):
+        return x.astype(np.float32)
 
 
 class DivideByScalar(BaseTransform):
@@ -70,6 +79,14 @@ class DifferenceOpticalFlow(BaseTransform):
         flows = [cv2.calcOpticalFlowFarneback(grey[i], grey[i + 1], None, 0.5, 3, 15, 3, 5, 1.2, 0) for i in range(len(grey) - 1)]
         flows = np.array(flows)
         return np.concatenate([x[1:], flows], axis=-1)
+
+
+class ConcatPreviousFrame(BaseTransform):
+    def __init__(self):
+        super(ConcatPreviousFrame, self).__init__()
+
+    def __call__(self, x):
+        return np.concatenate([x[:-1], x[1:]], axis=-1)
     
 
 class StackAxis(BaseTransform):
@@ -83,3 +100,12 @@ class StackAxis(BaseTransform):
         # and orig_axis is 0, merge_axis is 2
         # new shape is (2, 6, 360, 640)
         return np.concatenate(np.split(x, x.shape[self.orig_axis], axis=self.orig_axis), axis=self.merge_axis)[0]
+
+
+class Rescale(BaseTransform):
+    def __init__(self, scale):
+        super(Rescale, self).__init__()
+        self.scale = scale
+
+    def __call__(self, x):
+        return np.array([cv2.resize(frame, None, fx=self.scale, fy=self.scale) for frame in x])

@@ -185,7 +185,7 @@ class ResNet(nn.Module):
         self,
         block,
         layers,
-        num_channels=5,
+        num_channels=6,
         zero_init_residual=False,
         groups=1,
         widen=1,
@@ -351,7 +351,8 @@ def resnet10(**kwargs):
 
 
 def resnet18(**kwargs):
-    return ResNet(BasicBlock, [2, 2, 2, 2], **kwargs), 512
+    avg_pool_shape = kwargs['avg_pool_shape']
+    return ResNet(BasicBlock, [2, 2, 2, 2], **kwargs), 512 * avg_pool_shape[0] * avg_pool_shape[1]
 
 
 def resnet18ID(**kwargs):
@@ -359,15 +360,22 @@ def resnet18ID(**kwargs):
 
 
 def resnet34(**kwargs):
-    return ResNet(BasicBlock, [3, 4, 6, 3], **kwargs), 512
+    avg_pool_shape = kwargs['avg_pool_shape']
+    return ResNet(BasicBlock, [3, 4, 6, 3], **kwargs), 512 * avg_pool_shape[0] * avg_pool_shape[1]
 
 
 def resnet50(**kwargs):
-    return ResNet(Bottleneck, [3, 4, 6, 3], **kwargs), 2048
+    avg_pool_shape = kwargs['avg_pool_shape']
+    return ResNet(Bottleneck, [3, 4, 6, 3], **kwargs), 2048 * avg_pool_shape[0] * avg_pool_shape[1]
 
 
 def resnet101(**kwargs):
     return ResNet(Bottleneck, [3, 4, 23, 3], **kwargs), 2048
+
+
+def resnet34x2(**kwargs):
+    avg_pool_shape = kwargs['avg_pool_shape']
+    return ResNet(BasicBlock, [3, 4, 6, 3], widen=2, **kwargs), 1024 * avg_pool_shape[0] * avg_pool_shape[1]
 
 
 def resnet50x2(**kwargs):

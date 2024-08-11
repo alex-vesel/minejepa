@@ -24,30 +24,42 @@ class Projector(nn.Module):
 
 
 class ActionJEPA(nn.Module):
-    def __init__(self, backbone_func, num_actions, avg_pool_shape=(1, 1), projector_output_dim=8192):
+    def __init__(self, backbone_func, num_actions, avg_pool_shape=(1, 1), repr_dim=512, projector_output_dim=1024):
         super(ActionJEPA, self).__init__()
         self.backbone, self.num_features = backbone_func(avg_pool_shape=avg_pool_shape)
-        
+
+        self.repr_dim = repr_dim
+
         f_predict = (
-            [self.num_features + num_actions] +
-            [2 * self.num_features] +
-            [self.num_features]
+            [self.repr_dim + num_actions] +
+            [2 * self.repr_dim] +
+            [4 * self.repr_dim] +
+            [self.repr_dim]
         )
         self.predict_head = Projector(f_predict)
 
-        f_action_fuse = (
-            [self.num_features + num_actions] +
-            [2 * self.num_features] +
-            [self.num_features]
+        f_feature_fuse = (
+            [self.num_features + num_actions + 4] +
+            [self.repr_dim] +
+            [self.repr_dim] +
+            [self.repr_dim]
         )
-        self.action_fuse_head = Projector(f_action_fuse)
+        self.feature_fuse_head = Projector(f_feature_fuse)
 
         f_proj = (
-            [self.num_features] +
-            [2 * self.num_features] +
+            [self.repr_dim] +
+            [2 * projector_output_dim] +
             [projector_output_dim]
         )
         self.projector = Projector(f_proj)
+
+        # get num of params in each model
+        # start with backbone
+        print(f"Backbone params: {sum(p.numel() for p in self.backbone.parameters())}")
+        print(f"Predict head params: {sum(p.numel() for p in self.predict_head.parameters())}")
+        print(f"Feature fuse head params: {sum(p.numel() for p in self.feature_fuse_head.parameters())}")
+        print(f"Projector params: {sum(p.numel() for p in self.projector.parameters())}")
+
 
 
     def predict(self, rep, a):
@@ -63,8 +75,9 @@ class ActionJEPA(nn.Module):
         a = a.view(-1, a.shape[-1])
 
         x = self.backbone(x)
+        x = x.view(x.shape[0], -1)
         x = torch.cat([x, a], dim=1)
-        x = self.action_fuse_head(x)
+        x = self.feature_fuse_head(x)
 
         x = x.view(x_shape[0], x_shape[1], -1)
         

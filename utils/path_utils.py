@@ -12,12 +12,17 @@ def extract_clip_name(x):
     return clip_name.group(0)
 
 
-def recurse_dir_for_clips(path):
+def recurse_dir_for_clips(path, downsample_factor=1):
     # get path to last folder containing mp4 files
     clip_paths = []
+    if downsample_factor == 1:
+        endswith_tag = '.mp4'
+    else:
+        endswith_tag = f'_downsampled_{str(downsample_factor).replace(".", "-")}.mp4'
     for root, dirs, files in os.walk(path):
         for file in files:
-            if file.endswith('.mp4'):
+            # check that file is at least 1MB
+            if file.endswith(endswith_tag) and os.stat(os.path.join(root, file)).st_size > 1000000:
                 clip_paths.append(root)
                 break
     

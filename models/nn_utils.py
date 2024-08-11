@@ -35,6 +35,8 @@ def get_cov_std_loss(x: torch.Tensor) -> CovStdLoss:
     cov = (x.T @ x) / (batch_size - 1)
     cov_loss = off_diagonal(cov).pow_(2).sum().div(num_features)
 
+    # import IPython; IPython.embed(); exit(0)
+
     return CovStdLoss(cov_loss, std_loss)
 
 

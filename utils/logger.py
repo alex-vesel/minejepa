@@ -27,6 +27,11 @@ class Logger:
             for key, value in loss_info.diagnostics_info.items():
                 self.writer.add_scalar(f"{split}/{key}", value, step)
 
+
+    def log_intra(self, loss_info, step):
+        for key, value in loss_info.diagnostics_info.items():
+            self.writer.add_scalar(f"train/intra/{key}", value, step)
+
     
     def log_to_file(self, train_loss_info, val_loss_info, step):
         with open(os.path.join(self.exp_path, 'log.txt'), 'a') as f:
